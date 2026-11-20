@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- Go API: The close function returned by `ResourceBuilder.BuildSuspended` no longer hangs when an output resource was initialized, for example by `Resources.ConnectionTest`, but never started. (@TheJohnMatti)
+
 ## 4.85.0 - 2026-11-17
 
 ### Added

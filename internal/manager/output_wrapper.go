@@ -16,8 +16,9 @@ import (
 var _ ioutput.Sync = &outputWrapper{}
 
 type outputWrapper struct {
-	output  ioutput.Streamed
-	shutSig *shutdown.Signaller
+	output    ioutput.Streamed
+	startOnce sync.Once
+	shutSig   *shutdown.Signaller
 
 	tranChan chan message.Transaction
 	tranMut  sync.RWMutex
@@ -56,7 +57,7 @@ func (w *outputWrapper) ConnectionStatus() component.ConnectionStatuses {
 }
 
 func (w *outputWrapper) TriggerStartConsuming() {
-	w.output.TriggerStartConsuming()
+	w.startOnce.Do(w.output.TriggerStartConsuming)
 }
 
 func (w *outputWrapper) TriggerStopConsuming() {
@@ -74,5 +75,14 @@ func (w *outputWrapper) TriggerCloseNow() {
 }
 
 func (w *outputWrapper) WaitForClose(ctx context.Context) error {
+	var notStarted bool
+	w.startOnce.Do(func() {
+		// If we hit here then we were never started, so there's nothing to
+		// wait for
+		notStarted = true
+	})
+	if notStarted {
+		return nil
+	}
 	return w.output.WaitForClose(ctx)
 }

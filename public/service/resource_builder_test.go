@@ -106,6 +106,26 @@ file:
 	}))
 }
 
+func TestResourceBuilderSuspendedOutputClose(t *testing.T) {
+	b := service.NewResourceBuilder()
+	require.NoError(t, b.AddOutputYAML(`
+label: foo
+drop: {}
+`))
+
+	res, stop, err := b.BuildSuspended()
+	require.NoError(t, err)
+
+	tCtx, done := context.WithTimeout(t.Context(), time.Second*5)
+	defer done()
+
+	// Initializes the output without starting it.
+	_, err = res.ConnectionTest(tCtx)
+	require.NoError(t, err)
+
+	require.NoError(t, stop(tCtx))
+}
+
 func TestResourceBuilderYAMLErrors(t *testing.T) {
 	b := service.NewResourceBuilder()
 
